@@ -10,6 +10,7 @@
 ```
 $ git clone git@github.com:MichinobuMaeda/sunflowerseed.git
 $ cd sunflowerseed
+$ composer install
 $ npm install
 $ cp .env.local .env
 $ cp tests/local/test.php public/
@@ -17,6 +18,13 @@ $ touch storage/database.sqlite
 $ php artisan migrate:fresh
 $ php artisan serve
 ``` 
+
+for php 7.2
+
+```
+$ curl -s https://getcomposer.org/installer | php7.2
+$ php7.2 composer.phar install
+```
 
 ## Create this project
 
