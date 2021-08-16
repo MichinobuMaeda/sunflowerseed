@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\VoteController;
+use App\Http\Controllers\VoteAdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,4 +17,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
+
+Route::resource('votes', VoteController::class)->only([
+    'index', 'show', 'create', 'store', 'edit', 'update'
+]);

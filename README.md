@@ -12,7 +12,9 @@ $ git clone git@github.com:MichinobuMaeda/sunflowerseed.git
 $ cd sunflowerseed
 $ npm install
 $ cp .env.local .env
+$ cp tests/local/test.php public/
 $ touch storage/database.sqlite
+$ php artisan migrate:fresh
 $ php artisan serve
 ``` 
 

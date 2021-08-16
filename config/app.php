@@ -67,7 +67,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Tokyo',
 
     /*
     |--------------------------------------------------------------------------
@@ -80,7 +80,7 @@ return [
     |
     */
 
-    'locale' => 'en',
+    'locale' => 'ja',
 
     /*
     |--------------------------------------------------------------------------
@@ -106,7 +106,7 @@ return [
     |
     */
 
-    'faker_locale' => 'en_US',
+    'faker_locale' => 'ja_JP',
 
     /*
     |--------------------------------------------------------------------------
@@ -231,4 +231,8 @@ return [
 
     ],
 
+    'site_url' => env('SITE_URL', env('APP_URL', 'http://localhost')),
+    'site_name' => env('SITE_NAME', null),
+    'dokuwiki_session_name' => env('DOKUWIKI_SESSION_NAME', null),
+    'dokuwiki_session_rel' => env('DOKUWIKI_SESSION_REL', null),
 ];

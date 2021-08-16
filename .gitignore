@@ -1,4 +1,6 @@
 .env.production
+/storage/database.sqlite
+/public/test.php
 
 /node_modules
 /public/hot
