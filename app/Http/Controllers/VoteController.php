@@ -74,8 +74,8 @@ class VoteController extends Controller
                     'options' => $options,
                 ]);
             }
-            return redirect()->route('votes.edit', ['vote' => $voteSet->id]);
         });
+        return redirect()->route('votes.index');
     }
 
     /**
