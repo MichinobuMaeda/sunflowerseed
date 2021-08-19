@@ -24,4 +24,6 @@ class Vote extends Model
     {
         return $this->belongsTo(VoteItem::class);
     }
+
+    public $timestamps = false;
 }

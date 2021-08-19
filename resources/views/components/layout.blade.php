@@ -35,8 +35,19 @@
                                         </a>
                                     </li>
                                     @hasSection('title')
+                                    @hasSection('title2')
+                                    <li class="breadcrumb-item" aria-current="page">
+                                        @yield('title')
+                                    </li>
+                                    @else
                                     <li class="breadcrumb-item active" aria-current="page">
                                         @yield('title')
+                                    </li>
+                                    @endif
+                                    @endif
+                                    @hasSection('title2')
+                                    <li class="breadcrumb-item active" aria-current="page">
+                                        @yield('title2')
                                     </li>
                                     @endif
                                     @endif

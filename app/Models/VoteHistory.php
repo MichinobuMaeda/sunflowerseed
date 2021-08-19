@@ -16,6 +16,7 @@ class VoteHistory extends Model
     protected $fillable = [
         'vote_set_id',
         'user_id',
+        'user_name',
     ];
 
     /**

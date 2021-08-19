@@ -18,15 +18,25 @@
         @endif
     </h6>
 @elseif ($voteSet->status == 'open')
+    @if ($voteSet->histories()->where('user_id', Request::get('account')['id'])->count())
+    <h6>
+        <span class="badge bg-success">投票済</span>
+        @if (in_array('voteadmin', Request::get('account')['privs'], true))
+        <a href="{{ route('votes.edit', ['vote' => $voteSet->id]) }}">{{ $voteSet->name }}</a>
+        @else
+        {{ $voteSet->name }}
+        @endif
+    </h6>
+    @else
     <h6>
         <span class="badge bg-primary">投票中</span>
-        <!-- TODO: 投票管理者以外は、自分の投票が終わるとリンクが表示されなくなる。 -->
         <a href="{{ route('votes.edit', ['vote' => $voteSet->id]) }}">{{ $voteSet->name }}</a>
     </h6>
+    @endif
 @else
     <h6>
-        <span class="badge bg-secondary">[終了]</span>
-        {{ $voteSet->name }}
+        <span class="badge bg-secondary">終了</span>
+        <a href="{{ route('votes.show', ['vote' => $voteSet->id]) }}">{{ $voteSet->name }}</a>
     </h6>
 @endif
 @endforeach

@@ -17,6 +17,7 @@ class CreateVoteHistoriesTable extends Migration
             $table->id();
             $table->foreignId('vote_set_id')->constrained();
             $table->string('user_id');
+            $table->string('user_name');
             $table->timestamps();
             $table->unique(['vote_set_id', 'user_id']);
         });

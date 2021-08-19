@@ -1,5 +1,8 @@
 <x-layout>
-@section('title', $title)
+@section('title')
+    <a href="{{ route('votes.index') }}">{{ $title }} </a>
+@endsection
+@section('title2', '新規作成')
     <form method="POST" action="{{ route('votes.store') }}">
         @csrf
         <div class="alert alert-info" role="alert">

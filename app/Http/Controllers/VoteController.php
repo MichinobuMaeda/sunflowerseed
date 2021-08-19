@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use DateTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use App\Models\VoteSet;
@@ -58,20 +60,22 @@ class VoteController extends Controller
                         ->withErrors($validator)
                         ->withInput();
         }
-        $voteSet = VoteSet::create([
-            'name' => $request->get('name'),
-            'status' => 'prep',  // 'prep', 'open', 'close'
-            'anonymous' => $request->get('anonymous') == '1',
-        ]);
-        $options = $request->get('item_options') == '0' ? "賛成\n反対\n保留" : "信任\n不信任";
-        for ($i = 0; $i < intval($request->get('item_count')); ++$i) {
-            $voteSet->items()->create([
-                'seq' => $i,
-                'name' => '項目'.($i + 1),
-                'options' => $options,
+        DB::transaction(function () use ($request) {
+            $voteSet = VoteSet::create([
+                'name' => $request->get('name'),
+                'status' => 'prep',  // 'prep', 'open', 'close'
+                'anonymous' => $request->get('anonymous') == '1',
             ]);
-        }
-        return redirect()->route('votes.edit', ['vote' => $voteSet->id]);
+            $options = $request->get('item_options') == '0' ? "賛成\n反対\n保留" : "信任\n不信任";
+            for ($i = 0; $i < intval($request->get('item_count')); ++$i) {
+                $voteSet->items()->create([
+                    'seq' => $i,
+                    'name' => '項目'.($i + 1),
+                    'options' => $options,
+                ]);
+            }
+            return redirect()->route('votes.edit', ['vote' => $voteSet->id]);
+        });
     }
 
     /**
@@ -84,7 +88,15 @@ class VoteController extends Controller
     public function edit(VoteSet $voteSet, Request $request)
     {
         if ($voteSet->status == 'open') {
-            return $this->vote($voteSet, $request);
+            if ($voteSet->histories()->where('user_id', $request->get('account')['id'])->count()) {
+                if (in_array('voteadmin', $request->get('account')['privs'], true)) {
+                    return $this->editVoteSet($voteSet, $request);
+                } else {
+                    return redirect()->route('votes.index');
+                }
+            } else {
+                return $this->vote($voteSet, $request);
+            }
         } else if ($voteSet->status == 'prep') {
             return $this->editVoteSet($voteSet, $request);
         } else {
@@ -131,10 +143,16 @@ class VoteController extends Controller
      */
     public function update(VoteSet $voteSet, Request $request)
     {
-        // TODO: 投票管理者以外は、投票期間中、自分の投票が終わるまで投票ページが表示できる。
-        // TODO: 投票管理者は、投票期間中、自分の投票が終わると編集ページが表示される。
         if ($voteSet->status == 'open') {
-            return $this->storeVote($voteSet, $request);
+            if ($voteSet->histories()->where('user_id', $request->get('account')['id'])->count()) {
+                if (in_array('voteadmin', $request->get('account')['privs'], true)) {
+                    return $this->updateVoteSetStatus($voteSet, $request);
+                } else {
+                    return redirect()->route('votes.index');
+                }
+            } else {
+                return $this->storeVote($voteSet, $request);
+            }
         } else if ($voteSet->status == 'prep') {
             return $this->updateVoteSet($voteSet, $request);
         } else {
@@ -161,24 +179,48 @@ class VoteController extends Controller
                         ->withErrors($validator)
                         ->withInput();
         }
-        $voteSet->status = $request->get('status');
-        $voteSet->name = $request->get('name');
-        $voteSet->anonymous = $request->get('anonymous') == '1';
-        $voteSet->save();
-        $voteSet->items()->delete();
-        $seq = 0;
-        $nameList = $request->get('item_name');
-        $optionList = $request->get('item_options');
-        for ($i = 0; $i < count($nameList); ++$i) {
-            if (trim($nameList[$i]) && trim($optionList[$i])) {
-                $voteSet->items()->create([
-                    'seq' => $seq,
-                    'name' => $nameList[$i],
-                    'options' => $optionList[$i],
-                ]);
-                ++$seq;
+        DB::transaction(function () use ($voteSet, $request) {
+            $voteSet->status = $request->get('status');
+            $voteSet->name = $request->get('name');
+            $voteSet->anonymous = $request->get('anonymous') == '1';
+            $voteSet->save();
+            $voteSet->items()->delete();
+            $seq = 0;
+            $nameList = $request->get('item_name');
+            $optionList = $request->get('item_options');
+            for ($i = 0; $i < count($nameList); ++$i) {
+                if (trim($nameList[$i]) && trim($optionList[$i])) {
+                    $voteSet->items()->create([
+                        'seq' => $seq,
+                        'name' => $nameList[$i],
+                        'options' => $optionList[$i],
+                    ]);
+                    ++$seq;
+                }
             }
+        });
+        return redirect()->route('votes.index');
+    }
+
+    /**
+     * Update the status of the vote set.
+     *
+     * @param  App\Models\VoteSet  $voteSet
+     * @param  Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View
+     */
+    public function updateVoteSetStatus(VoteSet $voteSet, Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return redirect()->back()
+                        ->withErrors($validator)
+                        ->withInput();
         }
+        $voteSet->status = $request->get('status');
+        $voteSet->save();
         return redirect()->route('votes.index');
     }
 
@@ -191,6 +233,20 @@ class VoteController extends Controller
      */
     public function storeVote(VoteSet $voteSet, Request $request)
     {
+        DB::transaction(function () use ($voteSet, $request) {
+            $voteSet->histories()->create([
+                'user_id' => $request->get('account')['id'],
+                'user_name' => $request->get('account')['name'],
+            ]);
+            $user = $request->get('account')['id'];
+            $voter = $voteSet->anonymous ? md5($user . (new DateTime())->format(DateTime::ATOM)) : $user;
+            foreach ($voteSet->items()->get() as $item) {
+                $item->votes()->create([
+                    'voter' => $voter,
+                    'vote' => $request->get('item_'.$item->id),
+                ]);
+            }
+        });
         return redirect()->route('votes.index');
     }
 
